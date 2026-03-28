@@ -79,12 +79,7 @@ services:
               count: 1
               capabilities: [gpu]
     environment:
-      IMBE_ASR_CHECKPOINT: /models/model_int8.onnx
-      IMBE_ASR_STATS: /models/stats.npz
-      IMBE_ASR_LM_PATH: /models/lm/3gram.bin
-      IMBE_ASR_UNIGRAMS_PATH: /models/lm/unigrams.txt
-      IMBE_ASR_LM_ALPHA: "${IMBE_ASR_LM_ALPHA:-0.5}"
-      IMBE_ASR_LM_BETA: "${IMBE_ASR_LM_BETA:-1.0}"
+      IMBE_ASR_MODEL: "${IMBE_ASR_MODEL:-trunk-reporter/imbe-asr-base-512d-p25}"
       IMBE_ASR_BEAM_WIDTH: "${IMBE_ASR_BEAM_WIDTH:-100}"
       IMBE_ASR_DEVICE: "${IMBE_ASR_DEVICE:-cuda}"
     volumes:
