@@ -135,6 +135,10 @@ All ports bind to `0.0.0.0` by default. Set `BIND_IP` in `.env` to restrict to a
 
 Full step-by-step setup: [docs.luxprimatech.com/#/imbe-asr-setup](https://docs.luxprimatech.com/#/imbe-asr-setup)
 
+## Roadmap
+
+See the [Trunk Reporter Roadmap](https://github.com/orgs/trunk-reporter/projects/1) for the cross-repo project tracker with priorities and phases.
+
 ## Related
 
 - [tr-docker](https://github.com/trunk-reporter/tr-docker) — trunk-recorder image source + CI
