@@ -1,0 +1,122 @@
+services:
+
+  # ---------------------------------------------------------------------------
+  # mosquitto — MQTT broker
+  # ---------------------------------------------------------------------------
+  mosquitto:
+    image: eclipse-mosquitto:2
+    restart: unless-stopped
+    ports:
+      - "${BIND_IP:-0.0.0.0}:1883:1883"
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - mosquitto-data:/mosquitto/data
+
+  # ---------------------------------------------------------------------------
+  # postgres — Database
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-trengine}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-trengine}
+      POSTGRES_DB: ${POSTGRES_DB:-trengine}
+    volumes:
+      - ./data/db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-trengine}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # tr-engine — Backend API + call ingestion
+  # ---------------------------------------------------------------------------
+  tr-engine:
+    image: ghcr.io/trunk-reporter/tr-engine:latest
+    restart: unless-stopped
+    ports:
+      - "${BIND_IP:-0.0.0.0}:${HTTP_PORT:-8080}:8080"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-trengine}:${POSTGRES_PASSWORD:-trengine}@postgres:5432/${POSTGRES_DB:-trengine}?sslmode=disable
+      MQTT_BROKER_URL: tcp://mosquitto:1883
+      AUDIO_DIR: /data/audio
+    volumes:
+      - ./data/audio:/data/audio
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mosquitto:
+        condition: service_started
+
+  # ---------------------------------------------------------------------------
+  # tr-dashboard — Web UI
+  # ---------------------------------------------------------------------------
+  tr-dashboard:
+    image: ghcr.io/trunk-reporter/tr-dashboard:latest
+    restart: unless-stopped
+    ports:
+      - "${BIND_IP:-0.0.0.0}:${DASHBOARD_PORT:-3000}:3000"
+    environment:
+      TR_ENGINE_URL: http://tr-engine:8080
+      TR_AUTH_TOKEN: ${AUTH_TOKEN:-}
+    depends_on:
+      - tr-engine
+
+  # ---------------------------------------------------------------------------
+  # imbe-asr — IMBE vocoder → text transcription server
+  # Models are downloaded from HuggingFace on first run if not present.
+  # GPU strongly recommended; set IMBE_ASR_DEVICE=cpu for CPU-only.
+  # ---------------------------------------------------------------------------
+  imbe-asr:
+    image: ghcr.io/trunk-reporter/imbe-asr-server:latest
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    environment:
+      IMBE_ASR_CHECKPOINT: /models/model_int8.onnx
+      IMBE_ASR_STATS: /models/stats.npz
+      IMBE_ASR_LM_PATH: /models/lm/3gram.bin
+      IMBE_ASR_UNIGRAMS_PATH: /models/lm/unigrams.txt
+      IMBE_ASR_LM_ALPHA: "${IMBE_ASR_LM_ALPHA:-0.5}"
+      IMBE_ASR_LM_BETA: "${IMBE_ASR_LM_BETA:-1.0}"
+      IMBE_ASR_BEAM_WIDTH: "${IMBE_ASR_BEAM_WIDTH:-100}"
+      IMBE_ASR_DEVICE: "${IMBE_ASR_DEVICE:-cuda}"
+    volumes:
+      - ./data/models:/models
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  # ---------------------------------------------------------------------------
+  # trunk-recorder — P25 SDR scanner
+  # ---------------------------------------------------------------------------
+  trunk-recorder:
+    image: ghcr.io/trunk-reporter/trunk-recorder:latest
+    restart: unless-stopped
+    privileged: true
+    devices:
+      - /dev/bus/usb:/dev/bus/usb
+    volumes:
+      - /var/run/dbus:/var/run/dbus
+      - /var/run/avahi-daemon/socket:/var/run/avahi-daemon/socket
+      - ./config.json:/app/config.json:ro
+      - ./data/audio:/app/audio
+      - ./talkgroups:/app/talkgroups:ro
+    depends_on:
+      - mosquitto
+      - imbe-asr
+
+volumes:
+  mosquitto-data:

@@ -1,0 +1,56 @@
+{
+  "ver": 2,
+  "audioArchive": true,
+  "callLog": true,
+  "logFile": true,
+  "broadcastSignals": false,
+  "audioOutputPath": "/app/audio",
+  "captureDir": "/app/audio",
+
+  "sources": [
+    {
+      "center": 855000000,
+      "rate": 2400000,
+      "error": 0,
+      "gain": 40,
+      "antenna": "SMA",
+      "digitalRecorders": 3,
+      "driver": "osmosdr",
+      "device": "rtl=0"
+    }
+  ],
+
+  "systems": [
+    {
+      "control_channels": [851000000],
+      "type": "p25",
+      "shortName": "mySys",
+      "talkgroupsFile": "/app/talkgroups/talkgroups.csv"
+    }
+  ],
+
+  "plugins": [
+    {
+      "name": "mqtt_status",
+      "library": "libmqtt_status_plugin",
+      "broker": "tcp://mosquitto:1883",
+      "topic": "tr/feeds",
+      "unit_topic": "tr/units",
+      "instanceId": "my-site",
+      "username": "",
+      "password": "",
+      "mqtt_audio": true,
+      "mqtt_audio_type": "m4a"
+    },
+    {
+      "name": "mqtt_dvcf",
+      "library": "libmqtt_dvcf",
+      "write_enabled": true,
+      "mqtt_enabled": true,
+      "broker": "tcp://mosquitto:1883",
+      "topic": "tr/feeds",
+      "username": "",
+      "password": ""
+    }
+  ]
+}
