@@ -36,8 +36,6 @@ services:
   tr-engine:
     image: ghcr.io/trunk-reporter/tr-engine:latest
     restart: unless-stopped
-    ports:
-      - "${BIND_IP:-0.0.0.0}:${HTTP_PORT:-8080}:8080"
     env_file:
       - .env
     environment:
@@ -58,11 +56,10 @@ services:
   tr-dashboard:
     image: ghcr.io/trunk-reporter/tr-dashboard:latest
     restart: unless-stopped
-    ports:
-      - "${BIND_IP:-0.0.0.0}:${DASHBOARD_PORT:-3000}:3000"
     environment:
       TR_ENGINE_URL: http://tr-engine:8080
       TR_AUTH_TOKEN: ${AUTH_TOKEN:-}
+      SITE_ADDRESS: ${SITE_ADDRESS:-http://localhost}
     depends_on:
       - tr-engine
 
@@ -118,5 +115,26 @@ services:
       - mosquitto
       - imbe-asr
 
+  # ---------------------------------------------------------------------------
+  # caddy — Reverse proxy: single port for dashboard + API with auth injection
+  # ---------------------------------------------------------------------------
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "${BIND_IP:-0.0.0.0}:${HTTP_PORT:-80}:80"
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+      AUTH_TOKEN: ${AUTH_TOKEN:-}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - tr-engine
+      - tr-dashboard
+
 volumes:
   mosquitto-data:
+  caddy_data:
+  caddy_config:

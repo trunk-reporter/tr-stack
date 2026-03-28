@@ -1,0 +1,8 @@
+{$SITE_ADDRESS::80} {
+    handle /api/* {
+        reverse_proxy tr-engine:8080
+    }
+    handle {
+        reverse_proxy tr-dashboard:3000
+    }
+}
