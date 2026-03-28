@@ -1,7 +1,13 @@
 {$SITE_ADDRESS::80} {
+    # When AUTH_ENABLED=true, inject read token for browser requests.
+    # Browsers that send their own Authorization header (e.g. with WRITE_TOKEN) pass through untouched.
+    @no_auth not header Authorization *
+    request_header @no_auth Authorization "Bearer {$AUTH_TOKEN:}"
+
     handle /api/* {
         reverse_proxy tr-engine:8080
     }
+
     handle {
         reverse_proxy tr-dashboard:3000
     }

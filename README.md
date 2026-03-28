@@ -21,7 +21,8 @@ cd tr-stack
 
 # 1. Configure
 cp sample.env .env
-# Edit .env — set POSTGRES_PASSWORD, AUTH_TOKEN, WRITE_TOKEN at minimum
+# Edit .env — set POSTGRES_PASSWORD and SITE_ADDRESS at minimum
+# SITE_ADDRESS should be http://YOUR_SERVER_IP (what your browser uses to reach it)
 
 # 2. Edit config.json — set your SDR source, frequency, and system details
 # See: https://trunkrecorder.com/docs/intro for trunk-recorder config reference
@@ -37,8 +38,10 @@ docker compose up -d
 docker compose logs -f tr-engine
 ```
 
-**Dashboard:** http://localhost:3000  
-**API:** http://localhost:8080
+**Dashboard:** http://YOUR_SERVER_IP (served by Caddy on port 80)  
+**API:** http://YOUR_SERVER_IP/api/v1
+
+Auth is disabled by default — no login required for local installs. See [Securing for Public Access](#securing-for-public-access) if you want to expose this externally.
 
 ## Configuration
 
@@ -48,9 +51,23 @@ Copy `sample.env` to `.env` and set your values. Minimum required:
 
 ```env
 POSTGRES_PASSWORD=your-secure-password
-AUTH_TOKEN=your-read-token        # openssl rand -base64 32
-WRITE_TOKEN=your-write-token      # openssl rand -base64 32
+SITE_ADDRESS=http://192.168.1.100    # your server's IP or hostname
 ```
+
+Auth is disabled by default (`AUTH_ENABLED=false`). The dashboard is accessible without login. See [Securing for Public Access](#securing-for-public-access) to enable auth.
+
+### Securing for Public Access
+
+If you're exposing the stack to the internet, enable auth:
+
+```env
+AUTH_ENABLED=true
+AUTH_TOKEN=     # openssl rand -base64 32
+WRITE_TOKEN=    # openssl rand -base64 32
+ADMIN_PASSWORD= # dashboard login password
+```
+
+With auth enabled, Caddy injects the read token for browser requests automatically. The dashboard will show a login prompt — use username `admin` and your `ADMIN_PASSWORD`.
 
 ### config.json
 
@@ -109,7 +126,7 @@ docker compose pull && docker compose up -d
 | Service | Port | Notes |
 |---|---|---|
 | tr-engine API | 8080 | Set `HTTP_PORT` in `.env` |
-| tr-dashboard | 3000 | Set `DASHBOARD_PORT` in `.env` |
+| Caddy (dashboard + API) | 80 | Set `HTTP_PORT` in `.env` |
 | Mosquitto MQTT | 1883 | For trunk-recorder instances on other machines |
 
 All ports bind to `0.0.0.0` by default. Set `BIND_IP` in `.env` to restrict to a specific interface.
