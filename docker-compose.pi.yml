@@ -1,0 +1,17 @@
+# Docker Compose override for Raspberry Pi (arm64, no GPU)
+# Usage: docker compose -f docker-compose.yml -f docker-compose.pi.yml up -d
+
+services:
+
+  imbe-asr:
+    image: ghcr.io/trunk-reporter/imbe-asr-server:cpu
+    deploy: {}
+    environment:
+      IMBE_ASR_MODEL: "${IMBE_ASR_MODEL:-trunk-reporter/imbe-asr-base-512d}"
+      IMBE_ASR_BEAM_WIDTH: "${IMBE_ASR_BEAM_WIDTH:-100}"
+      IMBE_ASR_DEVICE: cpu
+
+  trunk-recorder:
+    privileged: false
+    devices:
+      - /dev/bus/usb:/dev/bus/usb
