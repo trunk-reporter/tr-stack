@@ -105,6 +105,40 @@ snapshot_download('trunk-reporter/imbe-asr-large-1024d', local_dir='data/models'
 ```
 Then set `IMBE_ASR_LM_ALPHA=0.7` and `IMBE_ASR_LM_BETA=2.0` in `.env`.
 
+## Running on Raspberry Pi
+
+The stack runs on Raspberry Pi 5 (arm64) using CPU-only inference. A `docker-compose.pi.yml` override handles all Pi-specific configuration automatically.
+
+### Prerequisites
+
+- Raspberry Pi 5 (4GB+ RAM recommended, 8GB ideal)
+- 64-bit Raspberry Pi OS (Bookworm or later)
+- Docker Engine + Docker Compose v2 installed
+- RTL-SDR or compatible SDR dongle
+
+### Usage
+
+```bash
+# Same setup steps as Quick Start, then:
+docker compose -f docker-compose.yml -f docker-compose.pi.yml up -d
+```
+
+The Pi override:
+- Switches imbe-asr to the `:cpu` image tag (multi-arch, no GPU drivers needed)
+- Uses the smaller `imbe-asr-base-512d` model by default (lower memory, faster on ARM)
+- Sets `IMBE_ASR_DEVICE=cpu`
+- Removes GPU reservation and privileged mode
+
+### SDR on Pi
+
+RTL-SDR is the most common SDR for Pi deployments. Your `config.json` source settings will differ from x86 setups — make sure to set the correct device index and gain for your dongle. See the [trunk-recorder docs](https://trunkrecorder.com/docs/intro) for source configuration.
+
+### Performance
+
+CPU inference on Pi is significantly slower than GPU. Expect higher latency on transcriptions. The base model (`imbe-asr-base-512d`) is recommended over the P25-tuned or large models to keep inference time reasonable. Monitor memory usage — if the Pi runs out of RAM, consider reducing `IMBE_ASR_BEAM_WIDTH` in `.env`.
+
+> **Note:** The [GPU](#gpu) section below does not apply to Pi deployments.
+
 ## GPU
 
 GPU is strongly recommended for imbe-asr. The stack assumes NVIDIA GPU with the Docker NVIDIA runtime installed. For CPU-only:
