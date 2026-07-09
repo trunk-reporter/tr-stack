@@ -51,15 +51,13 @@ services:
         condition: service_started
 
   # ---------------------------------------------------------------------------
-  # tr-dashboard — Web UI
+  # tr-dashboard — Web UI (static files on :3000; Caddy reverse-proxies)
+  # v0.10+ image does not need TR_ENGINE_URL / TR_AUTH_TOKEN / SITE_ADDRESS —
+  # the browser talks to same-origin /api/* which Caddy routes to tr-engine.
   # ---------------------------------------------------------------------------
   tr-dashboard:
     image: ghcr.io/trunk-reporter/tr-dashboard:latest
     restart: unless-stopped
-    environment:
-      TR_ENGINE_URL: http://tr-engine:8080
-      TR_AUTH_TOKEN: ${AUTH_TOKEN:-}
-      SITE_ADDRESS: ${SITE_ADDRESS:-http://localhost}
     depends_on:
       - tr-engine
 
@@ -111,7 +109,8 @@ services:
       - imbe-asr
 
   # ---------------------------------------------------------------------------
-  # caddy — Reverse proxy: single port for dashboard + API with auth injection
+  # caddy — Reverse proxy: single port for dashboard + API
+  # Optional AUTH_TOKEN injection for token/full mode (see Caddyfile)
   # ---------------------------------------------------------------------------
   caddy:
     image: caddy:2-alpine
@@ -120,7 +119,7 @@ services:
       - "${BIND_IP:-0.0.0.0}:${HTTP_PORT:-80}:80"
     environment:
       SITE_ADDRESS: ${SITE_ADDRESS:-:80}
-      AUTH_TOKEN: ${AUTH_TOKEN:-placeholder}
+      AUTH_TOKEN: ${AUTH_TOKEN:-}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data

@@ -1,10 +1,22 @@
 {$SITE_ADDRESS::80} {
-    # When AUTH_ENABLED=true, inject read token for browser requests.
-    # Browsers that send their own Authorization header (e.g. with WRITE_TOKEN) pass through untouched.
+    # Optional public-read injection for token/full mode when AUTH_TOKEN is set.
+    # Browsers that already send Authorization (JWT, user-entered token, API key)
+    # are left untouched. In open mode AUTH_TOKEN is empty and this is a no-op.
+    # Prefer dashboard auth-init + JWT for full mode when possible.
     @no_auth not header Authorization *
     request_header @no_auth Authorization "Bearer {$AUTH_TOKEN:}"
 
     handle /api/* {
+        reverse_proxy tr-engine:8080 {
+            flush_interval -1
+        }
+    }
+
+    handle /audio/* {
+        reverse_proxy tr-engine:8080
+    }
+
+    handle /health/* {
         reverse_proxy tr-engine:8080
     }
 
