@@ -64,8 +64,8 @@
       "topic": "tr/feeds",
       "unit_topic": "tr/units",
       "clientid": "tr-eddie",
-      "username": "",
-      "password": "",
+      "username": "trengine",
+      "password": "CHANGE_ME_MQTT_PASSWORD",
       "mqtt_audio": true,
       "mqtt_audio_type": "m4a",
       "console_logs": true
@@ -78,8 +78,8 @@
       "broker": "tcp://mosquitto:1883",
       "topic": "tr/feeds",
       "clientid": "dvcf-eddie",
-      "username": "",
-      "password": ""
+      "username": "trengine",
+      "password": "CHANGE_ME_MQTT_PASSWORD"
     },
     {
       "name": "mqtt_avcf",
@@ -90,8 +90,8 @@
       "broker": "tcp://mosquitto:1883",
       "topic": "tr/feeds",
       "clientid": "avcf-eddie",
-      "username": "",
-      "password": ""
+      "username": "trengine",
+      "password": "CHANGE_ME_MQTT_PASSWORD"
     }
   ]
 }
