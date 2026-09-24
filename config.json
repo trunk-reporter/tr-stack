@@ -1,31 +1,58 @@
 {
   "ver": 2,
-  "audioArchive": true,
-  "callLog": true,
   "logFile": true,
-  "broadcastSignals": false,
-  "audioOutputPath": "/app/audio",
-  "captureDir": "/app/audio",
+  "callTimeout": 1,
+  "captureDir": "/app/audio/",
+  "audioStreaming": true,
+  "instanceId": "eddie",
 
   "sources": [
     {
-      "center": 855000000,
-      "rate": 2400000,
+      "center": 855500000.0,
+      "rate": 10000000.0,
       "error": 0,
-      "gain": 40,
-      "antenna": "SMA",
-      "digitalRecorders": 3,
-      "driver": "osmosdr",
-      "device": "rtl=0"
+      "gain": 12,
+      "mixGain": 12,
+      "ifGain": 8,
+      "lnaGain": 12,
+      "digitalRecorders": 20,
+      "device": "airspy,bias=1",
+      "driver": "osmosdr"
     }
   ],
 
   "systems": [
     {
-      "control_channels": [851000000],
+      "shortName": "butco",
+      "control_channels": [853062500, 853037500, 853287500, 853537500],
       "type": "p25",
-      "shortName": "mySys",
-      "talkgroupsFile": "/app/talkgroups/talkgroups.csv"
+      "modulation": "qpsk",
+      "talkgroupsFile": "/app/talkgroups/trs_tg_6643.csv",
+      "transmissionArchive": false,
+      "compressWav": true,
+      "digitalLevels": 3,
+      "minDuration": 0.3,
+      "enabled": true
+    },
+    {
+      "shortName": "warco",
+      "control_channels": [858237500, 858762500, 859237500, 859762500],
+      "type": "p25",
+      "modulation": "qpsk",
+      "talkgroupsFile": "/app/talkgroups/trs_tg_6643.csv",
+      "transmissionArchive": false,
+      "compressWav": true,
+      "digitalLevels": 3,
+      "minDuration": 0.3,
+      "enabled": false
+    },
+    {
+      "shortName": "conv",
+      "type": "conventional",
+      "channelFile": "/app/talkgroups/channels_conv.csv",
+      "squelch": -60,
+      "analogLevels": 8,
+      "minDuration": 1.0
     }
   ],
 
@@ -36,11 +63,12 @@
       "broker": "tcp://mosquitto:1883",
       "topic": "tr/feeds",
       "unit_topic": "tr/units",
-      "instanceId": "my-site",
+      "clientid": "tr-eddie",
       "username": "",
       "password": "",
       "mqtt_audio": true,
-      "mqtt_audio_type": "m4a"
+      "mqtt_audio_type": "m4a",
+      "console_logs": true
     },
     {
       "name": "mqtt_dvcf",
@@ -49,6 +77,19 @@
       "mqtt_enabled": true,
       "broker": "tcp://mosquitto:1883",
       "topic": "tr/feeds",
+      "clientid": "dvcf-eddie",
+      "username": "",
+      "password": ""
+    },
+    {
+      "name": "mqtt_avcf",
+      "library": "libmqtt_avcf",
+      "write_enabled": true,
+      "mqtt_enabled": false,
+      "analog_only": true,
+      "broker": "tcp://mosquitto:1883",
+      "topic": "tr/feeds",
+      "clientid": "avcf-eddie",
       "username": "",
       "password": ""
     }

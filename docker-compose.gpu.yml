@@ -1,0 +1,15 @@
+# Docker Compose override for NVIDIA GPU inference.
+# Usage: docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d
+
+services:
+  imbe-asr:
+    image: ghcr.io/trunk-reporter/imbe-asr-server:latest
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    environment:
+      IMBE_ASR_DEVICE: cuda

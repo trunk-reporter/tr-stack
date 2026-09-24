@@ -41,7 +41,7 @@ docker compose logs -f tr-engine
 **Dashboard:** http://YOUR_SERVER_IP (served by Caddy on port 80)  
 **API:** http://YOUR_SERVER_IP/api/v1
 
-Auth is disabled by default — no login required for local installs. See [Securing for Public Access](#securing-for-public-access) if you want to expose this externally.
+Auth is disabled by default — no login required for trusted local installs. See [Securing for Public Access](#securing-for-public-access) before exposing this externally.
 
 ## Configuration
 
@@ -54,20 +54,19 @@ POSTGRES_PASSWORD=your-secure-password
 SITE_ADDRESS=http://192.168.1.100    # your server's IP or hostname
 ```
 
-Auth is disabled by default (`AUTH_ENABLED=false`). The dashboard is accessible without login. See [Securing for Public Access](#securing-for-public-access) to enable auth.
+Auth is in `open` mode by default when both `AUTH_TOKEN` and `ADMIN_PASSWORD` are unset. The dashboard is accessible without login. See [Securing for Public Access](#securing-for-public-access) to enable auth.
 
 ### Securing for Public Access
 
-If you're exposing the stack to the internet, enable auth:
+If you're exposing the stack to the internet, use full auth:
 
 ```env
-AUTH_ENABLED=true
-AUTH_TOKEN=     # openssl rand -base64 32
-WRITE_TOKEN=    # openssl rand -base64 32
 ADMIN_PASSWORD= # dashboard login password
+# Optional public read token returned by /api/v1/auth-init:
+# AUTH_TOKEN=   # openssl rand -base64 32
 ```
 
-With auth enabled, Caddy injects the read token for browser requests automatically. The dashboard will show a login prompt — use username `admin` and your `ADMIN_PASSWORD`.
+When `ADMIN_PASSWORD` is set, tr-engine runs in full mode. The dashboard uses JWT login for writes and can use the optional `AUTH_TOKEN` as a public read token through `/api/v1/auth-init`. Caddy does not inject auth headers.
 
 ### config.json
 
@@ -141,13 +140,11 @@ CPU inference on Pi is significantly slower than GPU. Expect higher latency on t
 
 ## GPU
 
-GPU is strongly recommended for imbe-asr. The stack assumes NVIDIA GPU with the Docker NVIDIA runtime installed. For CPU-only:
+The default stack runs imbe-asr on CPU so first-run works without NVIDIA drivers. For GPU acceleration, use the GPU override:
 
-```env
-IMBE_ASR_DEVICE=cpu
+```bash
+docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d
 ```
-
-And remove the `deploy.resources` section from the `imbe-asr` service in `docker-compose.yml`.
 
 ## Upgrading
 
@@ -161,9 +158,9 @@ docker compose pull && docker compose up -d
 |---|---|---|
 | tr-engine API | 8080 | Set `HTTP_PORT` in `.env` |
 | Caddy (dashboard + API) | 80 | Set `HTTP_PORT` in `.env` |
-| Mosquitto MQTT | 1883 | For trunk-recorder instances on other machines |
+| Mosquitto MQTT | 1883 | Bound to localhost by default; set `MQTT_BIND_IP` for external trunk-recorder hosts |
 
-All ports bind to `0.0.0.0` by default. Set `BIND_IP` in `.env` to restrict to a specific interface.
+HTTP binds to `0.0.0.0` by default. Set `BIND_IP` in `.env` to restrict it to a specific interface. MQTT binds to `127.0.0.1` by default to avoid exposing anonymous Mosquitto on the LAN; set `MQTT_BIND_IP` only when remote trunk-recorder instances need to publish to this broker.
 
 ## Setup Guide
 
